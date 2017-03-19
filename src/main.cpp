@@ -19,6 +19,7 @@
 
 /* Written by Gregory Kikola <gkikola@gmail.com>. */
 
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -32,6 +33,8 @@ struct Settings {
 };
 
 bool process_options(const OptionParser& op, Settings& settings);
+void process_file(std::ostream& out, std::istream& in,
+                  const Settings& settings);
 
 int main(int argc, char* argv[])
 {
@@ -49,6 +52,18 @@ int main(int argc, char* argv[])
     Settings settings;
     if (process_options(op, settings))
       return 0; //exit on --version or --help
+
+    for (const auto& s : op.program_args()) {
+      if (s == "-")
+        process_file(std::cout, std::cin, settings);
+      else {
+        std::ifstream ifs(s);
+        if (ifs.is_open())
+          process_file(std::cout, ifs, settings);
+        else
+          throw std::runtime_error("could not open file \"" + s + "\"");
+      }
+    }
   } catch (const std::exception& e) {
     std::cerr << "Error: " << e.what() << std::endl;
 
@@ -106,4 +121,17 @@ Written by Gregory Kikola <gkikola@gmail.com>.\n\
   }
 
   return false;
+}
+
+void process_file(std::ostream& out, std::istream& in,
+                  const Settings& settings)
+{
+  std::string line;
+  while (getline(in, line)) {
+    if (line.length() > settings.length) {
+      out << line << "\n";
+    }
+  }
+
+  out << std::flush;
 }
