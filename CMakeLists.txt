@@ -15,4 +15,4 @@ configure_file (
 
 include_directories("${PROJECT_BINARY_DIR}")
 
-add_executable(longlines src/main.cpp)
+add_executable(longlines src/main.cpp src/option.cpp)
