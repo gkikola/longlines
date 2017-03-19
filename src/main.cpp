@@ -22,13 +22,43 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
-
 #include "option.hpp"
 #include "version.h"
 
 constexpr unsigned int default_length = 80u;
 
+struct Settings {
+  unsigned int length = default_length;
+};
+
+bool process_options(const OptionParser& op, Settings& settings);
+
 int main(int argc, char* argv[])
+{
+  try {
+    OptionParser op = {
+      {'l', "length", "MAXLENGTH", "display lines with length exceeding"
+       "MAXLENGTH characters"},
+      {'?', "help", "", "display detailed usage information and then exit"},
+      {'u', "usage", "", "display a short usage message and then exit"},
+      {0, "version", "", "display program version and exit"}
+    };
+  
+    op.parse(argc, argv);
+
+    Settings settings;
+    if (process_options(op, settings))
+      return 0; //exit on --version or --help
+  } catch (const std::exception& e) {
+    std::cerr << "Error: " << e.what() << std::endl;
+
+    return 1;
+  }
+
+  return 0;
+}
+
+bool process_options(const OptionParser& op, Settings& settings)
 {
   std::string usage = "\
 Usage: longlines [OPTION...] FILES\n\
@@ -47,22 +77,11 @@ There is NO WARRANTY, to the extent permitted by law.\n\
 \n\
 Written by Gregory Kikola <gkikola@gmail.com>.\n\
 ";
-
-  OptionParser op = {
-    {'l', "length", "MAXLENGTH", "display lines with length exceeding"
-    "MAXLENGTH characters"},
-    {'?', "help", "", "display detailed usage information and then exit"},
-    {'u', "usage", "", "display a short usage message and then exit"},
-    {0, "version", "", "display program version and exit"}
-  };
   
-  op.parse(argc, argv);
-
-  unsigned int length = default_length;
   for (const auto& o : op) {
     if (o.long_name == "version") {
       std::cout << version;
-      return 0;
+      return true;
     }
     else {
       int arg;
@@ -73,17 +92,18 @@ Written by Gregory Kikola <gkikola@gmail.com>.\n\
         if (arg < 0)
           throw std::runtime_error("length cannot be negative");
         else
-          length = static_cast<unsigned int>(arg);
+          settings.length = static_cast<unsigned int>(arg);
         break;
       case 'u':
         std::cout << usage;
-        return 0;
+        return true;
       case '?':
         std::cout << usage << std::endl;
         op.print_usage(std::cout);
-        return 0;
+        return true;
       }
     }
   }
-  return 0;
+
+  return false;
 }
