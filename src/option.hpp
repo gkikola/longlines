@@ -24,7 +24,6 @@
 
 #include <initializer_list>
 #include <iostream>
-#include <set>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -50,7 +49,7 @@ constexpr unsigned def_tab_stop = 30;
 
 class OptionParser {
 public:
-  typedef std::set<OptionDesc> desc_set;
+  typedef std::vector<OptionDesc> desc_set;
   typedef std::vector<Option> option_seq;
   typedef std::vector<std::string> arg_seq;
 
@@ -67,7 +66,7 @@ public:
   void allow_bad_opts(bool allow = true) { m_allow_bad_opts = allow; }
   void allow_bad_args(bool allow = true) { m_allow_bad_args = allow; }
   
-  void add(const OptionDesc& desc) { m_opts.insert(desc); }
+  void add(const OptionDesc& desc) { m_opts.push_back(desc); }
   void add(char sname, const std::string& lname,
            const std::string& aname, const std::string& desc,
            int group = 0);
@@ -104,6 +103,8 @@ public:
   iterator find(const std::string& long_name);
   const_iterator find(const std::string& long_name) const;
 
+  std::string program_cmd() const { return m_prog_cmd; }
+  
   arg_seq& program_args() { return m_prog_args; }
   const arg_seq& program_args() const { return m_prog_args; }
 
@@ -124,6 +125,7 @@ private:
   desc_set m_opts;
   option_seq m_opts_read;
   arg_seq m_prog_args;
+  std::string m_prog_cmd;
   std::string m_last_option_read; //used for error reporting
 };
 
