@@ -123,7 +123,13 @@ bool process_options(const OptionParser& op, Settings& settings)
         break;
       case 'L':
       case 'l':
-        arg = std::stoi(o.argument);
+        try {
+          arg = std::stoi(o.argument);
+        } catch (std::invalid_argument) {
+          throw std::runtime_error("length must be a number");
+        } catch (std::out_of_range) {
+          throw std::runtime_error("length is out of range");
+        }
 
         if (arg < 0)
           throw std::runtime_error("length cannot be negative");
