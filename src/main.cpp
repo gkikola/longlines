@@ -155,7 +155,7 @@ void process_file(std::ostream& out, std::istream& in,
                   const std::string& filename, const Settings& settings)
 {
   std::string line;
-  std::size_t line_no = 0;
+  std::size_t line_no = 1;
   unsigned int cur_length;
   
   while (getline(in, line)) {
