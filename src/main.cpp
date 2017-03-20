@@ -188,10 +188,12 @@ void process_file(std::ostream& out, std::istream& in,
         cur_length += 2;
       }
 
-      if (settings.all || cur_length + line.length() <= settings.out_length)
+      unsigned int remaining = cur_length > settings.out_length
+        ? 0 : settings.out_length - cur_length;
+      if (settings.all || line.length() < remaining)
         out << line << "\n";
-      else
-        out << line.substr(0, settings.out_length - cur_length) << "\n";
+      else        
+        out << line.substr(0, remaining) << "\n";
     }
 
     ++line_no;
