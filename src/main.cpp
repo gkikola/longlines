@@ -154,46 +154,36 @@ bool process_options(const OptionParser& op, Settings& settings)
 void process_file(std::ostream& out, std::istream& in,
                   const std::string& filename, const Settings& settings)
 {
-  std::string line;
+  std::string line, out_line;
   std::size_t line_no = 1;
   unsigned int cur_length;
   
   while (getline(in, line)) {
-    cur_length = 0u;
-    
     if (line.length() > settings.length) {
-      if (settings.filenames) {
-        out << filename;
-        cur_length += filename.length();
-      }
+      out_line = "";
+      
+      if (settings.filenames)
+        out_line += filename;
       
       if (settings.line_numbers) {
-        if (settings.filenames && !filename.empty()) {
-          out << "(";
-          ++cur_length;
-        }
+        if (settings.filenames && !filename.empty())
+          out_line += "(";
         
-        std::string num_str = std::to_string(line_no);
-        out << num_str;
-        cur_length += num_str.length();
+        out_line += std::to_string(line_no);
 
-        if (settings.filenames && !filename.empty()) {
-          out << ")";
-          ++cur_length;
-        }
+        if (settings.filenames && !filename.empty())
+          out_line += ")";
       }
 
-      if ((settings.filenames && !filename.empty()) || settings.line_numbers) {
-        out << ": ";
-        cur_length += 2;
-      }
+      if ((settings.filenames && !filename.empty()) || settings.line_numbers)
+        out_line += ": ";
 
-      unsigned int remaining = cur_length > settings.out_length
-        ? 0 : settings.out_length - cur_length;
-      if (settings.all || line.length() < remaining)
-        out << line << "\n";
+      out_line += line;
+
+      if (settings.all || out_line.length() <= settings.out_length)
+        out << out_line << "\n";
       else        
-        out << line.substr(0, remaining) << "\n";
+        out << out_line.substr(0, settings.out_length) << "\n";
     }
 
     ++line_no;
