@@ -162,25 +162,25 @@ void process_file(std::ostream& out, std::istream& in,
     cur_length = 0u;
     
     if (line.length() > settings.length) {
-      if (settings.filenames && !filename.empty()) {
+      if (settings.filenames) {
         out << filename;
         cur_length += filename.length();
-
-        if (settings.line_numbers) {
-          out << "(";
-          ++cur_length;
-        }
       }
       
       if (settings.line_numbers) {
+        if (settings.filenames && !filename.empty()) {
+          out << "(";
+          ++cur_length;
+        }
+        
         std::string num_str = std::to_string(line_no);
         out << num_str;
         cur_length += num_str.length();
-      }
 
-      if (settings.filenames && !filename.empty() && settings.line_numbers) {
-        out << ")";
-        ++cur_length;
+        if (settings.filenames && !filename.empty()) {
+          out << ")";
+          ++cur_length;
+        }
       }
 
       if ((settings.filenames && !filename.empty()) || settings.line_numbers) {
