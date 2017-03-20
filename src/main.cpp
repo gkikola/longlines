@@ -19,6 +19,7 @@
 
 /* Written by Gregory Kikola <gkikola@gmail.com>. */
 
+#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -28,20 +29,48 @@
 
 constexpr unsigned int default_length = 80u;
 
+  const std::string usage = "\
+Usage: longlines [OPTION...] FILES\n\
+Read each text file in FILES and display any lines that exceed the\n\
+length specified by the --length option (the default length is 80\n\
+characters).\n\
+";
+
+  const std::string version = "\
+longlines " LONGLINES_VERSION "\n\
+Copyright (C) 2017 Gregory Kikola\n\
+License GPLv3+: GNU GPL version 3 or later\n\
+<http://www.gnu.org/licenses/gpl.html>.\n\
+This is free software: you are free to change and redistribute it.\n\
+There is NO WARRANTY, to the extent permitted by law.\n\
+\n\
+Written by Gregory Kikola <gkikola@gmail.com>.\n\
+";
+
 struct Settings {
+  bool all = false;
+  bool filenames = true;
+  bool line_numbers = true;
   unsigned int length = default_length;
+  unsigned int out_length = default_length;
 };
 
 bool process_options(const OptionParser& op, Settings& settings);
 void process_file(std::ostream& out, std::istream& in,
-                  const Settings& settings);
+                  const std::string& filename, const Settings& settings);
 
 int main(int argc, char* argv[])
 {
   try {
     OptionParser op = {
-      {'l', "length", "MAXLENGTH", "display lines with length exceeding"
-       "MAXLENGTH characters"},
+      {'a', "all", "", "show whole lines instead of just the beginning "
+       "of each"},
+      {'f', "filenames", "", "suppresses filenames"},
+      {'l', "length", "MAXLENGTH", "display only lines with length exceeding "
+       "MAXLENGTH characters (default 80)"},
+      {'L', "output-length", "MAXLENGTH", "do not display more than "
+       "MAXLENGTH characters on each line of output (default 80)"},
+      {'n', "line-numbers", "", "suppresses line numbers"},
       {'?', "help", "", "display detailed usage information and then exit"},
       {'u', "usage", "", "display a short usage message and then exit"},
       {0, "version", "", "display program version and exit"}
@@ -53,13 +82,16 @@ int main(int argc, char* argv[])
     if (process_options(op, settings))
       return 0; //exit on --version or --help
 
+    if (op.program_args().empty())
+      std::cout << usage;
+    
     for (const auto& s : op.program_args()) {
       if (s == "-")
-        process_file(std::cout, std::cin, settings);
+        process_file(std::cout, std::cin, "", settings);
       else {
         std::ifstream ifs(s);
         if (ifs.is_open())
-          process_file(std::cout, ifs, settings);
+          process_file(std::cout, ifs, s, settings);
         else
           throw std::runtime_error("could not open file \"" + s + "\"");
       }
@@ -74,25 +106,7 @@ int main(int argc, char* argv[])
 }
 
 bool process_options(const OptionParser& op, Settings& settings)
-{
-  std::string usage = "\
-Usage: longlines [OPTION...] FILES\n\
-Read each text file in FILES and display any lines that exceed the\n\
-length specified by the --length option (the default length is 80\n\
-characters).\n\
-";
-
-  std::string version = "\
-longlines " LONGLINES_VERSION "\n\
-Copyright (C) 2017 Gregory Kikola\n\
-License GPLv3+: GNU GPL version 3 or later\n\
-<http://www.gnu.org/licenses/gpl.html>.\n\
-This is free software: you are free to change and redistribute it.\n\
-There is NO WARRANTY, to the extent permitted by law.\n\
-\n\
-Written by Gregory Kikola <gkikola@gmail.com>.\n\
-";
-  
+{  
   for (const auto& o : op) {
     if (o.long_name == "version") {
       std::cout << version;
@@ -101,13 +115,27 @@ Written by Gregory Kikola <gkikola@gmail.com>.\n\
     else {
       int arg;
       switch (o.short_name) {
+      case 'a':
+        settings.all = true;
+        break;
+      case 'f':
+        settings.filenames = false;
+        break;
+      case 'L':
       case 'l':
         arg = std::stoi(o.argument);
 
         if (arg < 0)
           throw std::runtime_error("length cannot be negative");
-        else
-          settings.length = static_cast<unsigned int>(arg);
+        else {
+          if (o.short_name == 'l')
+            settings.length = static_cast<unsigned int>(arg);
+          else if (o.short_name == 'L')
+            settings.out_length = static_cast<unsigned int>(arg);
+        }
+        break;
+      case 'n':
+        settings.line_numbers = false;
         break;
       case 'u':
         std::cout << usage;
@@ -124,13 +152,49 @@ Written by Gregory Kikola <gkikola@gmail.com>.\n\
 }
 
 void process_file(std::ostream& out, std::istream& in,
-                  const Settings& settings)
+                  const std::string& filename, const Settings& settings)
 {
   std::string line;
+  std::size_t line_no = 0;
+  unsigned int cur_length;
+  
   while (getline(in, line)) {
+    cur_length = 0u;
+    
     if (line.length() > settings.length) {
-      out << line << "\n";
+      if (settings.filenames && !filename.empty()) {
+        out << filename;
+        cur_length += filename.length();
+
+        if (settings.line_numbers) {
+          out << "(";
+          ++cur_length;
+        }
+      }
+      
+      if (settings.line_numbers) {
+        std::string num_str = std::to_string(line_no);
+        out << num_str;
+        cur_length += num_str.length();
+      }
+
+      if (settings.filenames && !filename.empty() && settings.line_numbers) {
+        out << ")";
+        ++cur_length;
+      }
+
+      if ((settings.filenames && !filename.empty()) || settings.line_numbers) {
+        out << ": ";
+        cur_length += 2;
+      }
+
+      if (settings.all || cur_length + line.length() <= settings.out_length)
+        out << line << "\n";
+      else
+        out << line.substr(0, settings.out_length - cur_length) << "\n";
     }
+
+    ++line_no;
   }
 
   out << std::flush;
