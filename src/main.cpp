@@ -65,12 +65,12 @@ int main(int argc, char* argv[])
     OptionParser op = {
       {'a', "all", "", "show whole lines instead of just the beginning "
        "of each"},
-      {'f', "filenames", "", "suppresses filenames"},
+      {'f', "filenames", "", "suppress filenames"},
       {'l', "length", "MAXLENGTH", "display only lines with length exceeding "
        "MAXLENGTH characters (default 80)"},
       {'L', "output-length", "MAXLENGTH", "do not display more than "
        "MAXLENGTH characters on each line of output (default 80)"},
-      {'n', "line-numbers", "", "suppresses line numbers"},
+      {'n', "line-numbers", "", "suppress line numbers"},
       {'?', "help", "", "display detailed usage information and then exit"},
       {'u', "usage", "", "display a short usage message and then exit"},
       {0, "version", "", "display program version and exit"}
