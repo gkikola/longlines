@@ -60,8 +60,10 @@ void process_file(std::ostream& out, std::istream& in,
                   const std::string& filename, const Settings& settings);
 
 
-std::string processLine(const std::string &line,const Settings& settings,std::size_t line_no);
-void printLine(std::ostream& out,const std::string &out_line,const Settings& settings);
+std::string process_line(const std::string& line, const Settings& settings,
+                         std::size_t line_no, const std::string& filename);
+void print_line(std::ostream& out, const std::string &out_line,
+                const Settings& settings);
 
 int main(int argc, char* argv[])
 {
@@ -170,8 +172,8 @@ void process_file(std::ostream& out, std::istream& in,
   
   while (getline(in, line)) {
     if (line.length() > settings.length) {
-       std::string new_line = processLine(line,settings,line_no);
-       printLine(out,new_line,settings);
+      std::string new_line = process_line(line, settings, line_no, filename);
+      print_line(out, new_line, settings);
     }
 
     ++line_no;
@@ -180,34 +182,36 @@ void process_file(std::ostream& out, std::istream& in,
   out << std::flush;
 }
 
-std::string processLine(const std::string &line,const Settings& settings,std::size_t line_no)
+std::string process_line(const std::string& line, const Settings& settings,
+                         std::size_t line_no, const std::string& filename)
 {
-   std::string out_line;
-      
-   if (settings.filenames)
-     out_line += filename;
+  std::string out_line;
 
-   if (settings.line_numbers) {
-     if (settings.filenames && !filename.empty())
-       out_line += "(";
+  if (settings.filenames)
+    out_line += filename;
 
-     out_line += std::to_string(line_no);
+  if (settings.line_numbers) {
+    if (settings.filenames && !filename.empty())
+      out_line += "(";
 
-     if (settings.filenames && !filename.empty())
-       out_line += ")";
-   }
+    out_line += std::to_string(line_no);
 
-   if ((settings.filenames && !filename.empty()) || settings.line_numbers)
-     out_line += ": ";
+    if (settings.filenames && !filename.empty())
+      out_line += ")";
+  }
+  
+  if ((settings.filenames && !filename.empty()) || settings.line_numbers)
+    out_line += ": ";
 
-   out_line += line;
-   return out_line;
+  out_line += line;
+  return out_line;
 }
 
-void printLine(std::ostream& out,const std::string &out_line,const Settings& settings)
+void print_line(std::ostream& out, const std::string& out_line,
+                const Settings& settings)
 {  
-   if (settings.all || out_line.length() <= settings.out_length)
-      out << out_line << "\n";
-   else        
-      out << out_line.substr(0, settings.out_length) << "\n";
+  if (settings.all || out_line.length() <= settings.out_length)
+    out << out_line << "\n";
+  else        
+    out << out_line.substr(0, settings.out_length) << "\n";
 }
